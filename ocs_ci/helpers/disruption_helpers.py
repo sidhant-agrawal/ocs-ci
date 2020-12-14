@@ -1,7 +1,10 @@
 import logging
+import random
+import re
+import time
 
 from ocs_ci.ocs.resources import pod
-from ocs_ci.ocs import constants, ocp
+from ocs_ci.ocs import constants, ocp, utils
 from ocs_ci.framework import config
 from ocs_ci.utility.utils import TimeoutSampler, run_async, run_cmd
 from ocs_ci.utility.retry import retry
@@ -162,3 +165,70 @@ class Disruptions:
                 raise TimeoutExpiredError(
                     f"Waiting for pid of ceph-{self.resource} in {node_name}"
                 )
+
+
+class DisruptionsExternalCluster:
+    """
+    This class contains methods of disrupt operations for External mode
+    """
+
+    def __init__(self):
+        self.resource = None
+        self.resource_id = None
+        self.resource_count = 0
+        self.ceph_cluster = utils.get_external_mode_rhcs()
+
+    def set_resource(self, resource):
+        self.resource = resource
+        self.resource_count = len(self.ceph_cluster.get_metadata_list(resource))
+
+    def select_daemon(self):
+        """
+        Select id of leader/active self.resource daemon
+
+        """
+        ct_pod = pod.get_ceph_tools_pod()
+        if self.resource == "mgr":
+            self.resource_id = ct_pod.exec_ceph_cmd("ceph mgr dump").get("active_name")
+        elif self.resource == "mon":
+            self.resource_id = ct_pod.exec_ceph_cmd("ceph quorum_status").get(
+                "quorum_leader_name"
+            )
+        elif self.resource == "mds":
+            mds_stat = ct_pod.exec_ceph_cmd("ceph mds stat", format="plain")
+            self.resource_id = re.search(r"(?<=0=).*?(?==up:active)", mds_stat).group(0)
+        else:
+            self.resource_id = random.randint(0, self.resource_count)
+
+        log.info(f"Selected daemon: ceph-{self.resource}@{self.resource_id}")
+
+    def delete_resource(self, wait_time=60):
+        """
+        Simulate pod deletion by stop and start ceph daemon
+
+        Args:
+            wait_time (int): Seconds to wait before starting the Ceph daemon
+
+        """
+        if not self.resource_id:
+            self.select_daemon()
+
+        utils.change_daemon_status_external(
+            self.ceph_cluster, self.resource, self.resource_id, "stop"
+        )
+        log.info(f"Waiting for {wait_time} seconds before starting the Ceph daemon")
+        time.sleep(wait_time)
+        utils.change_daemon_status_external(
+            self.ceph_cluster, self.resource, self.resource_id, "start"
+        )
+
+    def kill_daemon(self):
+        """
+        Kill self.resource daemon
+
+        """
+        if not self.resource_id:
+            self.select_daemon()
+
+        utils.kill_daemon_external(self.ceph_cluster, self.resource, self.resource_id)
+        log.info(f"Killed ceph-{self.resource}@{self.resource_id} daemon")
