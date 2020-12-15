@@ -133,7 +133,11 @@ class TestDaemonKillDuringResourceCreation(ManageTest):
         Deletion of 'resource_to_delete' daemon will be introduced while
         'operation_to_disrupt' is progressing.
         """
-        disruption = disruption_helpers.Disruptions()
+        if helpers.storagecluster_independent_check():
+            disruption = disruption_helpers.DisruptionsExternalCluster()
+        else:
+            disruption = disruption_helpers.Disruptions()
+
         pod_functions = {
             "mds": partial(pod.get_mds_pods),
             "mon": partial(pod.get_mon_pods),

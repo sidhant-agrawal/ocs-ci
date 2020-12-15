@@ -26,6 +26,7 @@ from ocs_ci.helpers.helpers import (
     wait_for_resource_count_change,
     verify_pv_mounted_on_node,
     default_ceph_block_pool,
+    storagecluster_independent_check,
 )
 from ocs_ci.helpers import disruption_helpers
 
@@ -237,7 +238,6 @@ class TestDaemonKillDuringMultipleDeleteOperations(ManageTest):
             f"RWO PVCs: {len(pvcs_to_delete) - no_of_rwx_pvcs_delete}, "
             f"RWX PVCs: {no_of_rwx_pvcs_delete}"
         )
-
         pod_functions = {
             "mds": partial(get_mds_pods),
             "mon": partial(get_mon_pods),
@@ -250,7 +250,11 @@ class TestDaemonKillDuringMultipleDeleteOperations(ManageTest):
             "operator": partial(get_operator_pods),
         }
 
-        disruption = disruption_helpers.Disruptions()
+        if storagecluster_independent_check():
+            disruption = disruption_helpers.DisruptionsExternalCluster()
+        else:
+            disruption = disruption_helpers.Disruptions()
+
         disruption.set_resource(resource=resource_name)
         executor = ThreadPoolExecutor(max_workers=len(pod_objs) + len(rwx_pod_objs))
 

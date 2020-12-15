@@ -13,6 +13,7 @@ from ocs_ci.framework.testlib import (
     cloud_platform_required,
     vsphere_platform_required,
     bugzilla,
+    skipif_external_mode,
 )
 from ocs_ci.helpers.sanity_helpers import Sanity
 from ocs_ci.helpers.helpers import wait_for_ct_pod_recovery
@@ -38,6 +39,7 @@ logger = logging.getLogger(__name__)
 @tier4
 @tier4b
 @ignore_leftovers
+@skipif_external_mode
 class TestDiskFailures(ManageTest):
     """
     Test class for detach and attach worker volume

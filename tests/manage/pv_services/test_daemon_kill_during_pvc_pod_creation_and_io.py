@@ -171,7 +171,11 @@ class TestDaemonKillDuringCreationOperations(ManageTest):
 
         executor = ThreadPoolExecutor(max_workers=len(io_pods))
 
-        disruption = disruption_helpers.Disruptions()
+        if helpers.storagecluster_independent_check():
+            disruption = disruption_helpers.DisruptionsExternalCluster()
+        else:
+            disruption = disruption_helpers.Disruptions()
+
         disruption.set_resource(resource=resource_name)
 
         # Get number of pods of type 'resource_name'

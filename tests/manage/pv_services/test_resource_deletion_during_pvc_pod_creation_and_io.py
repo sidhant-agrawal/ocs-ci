@@ -195,7 +195,14 @@ class TestResourceDeletionDuringCreationOperations(ManageTest):
 
         executor = ThreadPoolExecutor(max_workers=len(io_pods))
 
-        disruption = disruption_helpers.Disruptions()
+        ceph_resources = ["mgr", "mon", "osd", "mds"]
+        if helpers.storagecluster_independent_check() and (
+            resource_to_delete in ceph_resources
+        ):
+            disruption = disruption_helpers.DisruptionsExternalCluster()
+        else:
+            disruption = disruption_helpers.Disruptions()
+
         disruption.set_resource(resource=resource_to_delete)
 
         # Get number of pods of type 'resource_to_delete'

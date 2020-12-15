@@ -24,6 +24,7 @@ from ocs_ci.helpers.helpers import (
     verify_volume_deleted_in_backend,
     wait_for_resource_count_change,
     default_ceph_block_pool,
+    storagecluster_independent_check,
 )
 from ocs_ci.helpers import disruption_helpers
 
@@ -182,7 +183,12 @@ class TestDaemonKillDuringPodPvcDeletion(ManageTest):
             "rbdplugin_provisioner": partial(get_rbdfsplugin_provisioner_pods),
             "operator": partial(get_operator_pods),
         }
-        disruption = disruption_helpers.Disruptions()
+
+        if storagecluster_independent_check():
+            disruption = disruption_helpers.DisruptionsExternalCluster()
+        else:
+            disruption = disruption_helpers.Disruptions()
+
         disruption.set_resource(resource=resource_name)
         executor = ThreadPoolExecutor(max_workers=1)
 
