@@ -204,7 +204,8 @@ class DisruptionsExternalCluster:
 
     def delete_resource(self, wait_time=60):
         """
-        Simulate pod deletion by stop and start ceph daemon
+        Stop and start Ceph daemon, which is the equivalent of pod deletion in
+        internal mode
 
         Args:
             wait_time (int): Seconds to wait before starting the Ceph daemon

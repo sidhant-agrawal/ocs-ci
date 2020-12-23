@@ -1056,7 +1056,7 @@ def kill_daemon_external(ceph_cluster, daemon_type, daemon_id, sig_type="SIGTERM
         ceph_cluster (external_cluster.Ceph): Cluster object
         daemon_type (str): type of Ceph daemon
         daemon_id (int): daemon id
-        sig_type (str): type of signal to be sent
+        sig_type (str): type of signal to be sent (default: SIGTERM)
 
     Raises:
         CommandFailed exception
@@ -1076,16 +1076,17 @@ def kill_daemon_external(ceph_cluster, daemon_type, daemon_id, sig_type="SIGTERM
 
 def change_daemon_status_external(ceph_cluster, daemon_type, daemon_id, task="restart"):
     """
-    Start/stop/restart the ceph daemon
+    Start, stop or restart the Ceph daemon
 
     Args:
         ceph_cluster (external_cluster.Ceph): Cluster object
         daemon_type (str): type of Ceph daemon
         daemon_id (int): daemon id of the Ceph daemon
-        task (str): operation to be performed
+        task (str): operation to be performed (default: restart)
 
     Raises:
         CommandFailed exception in case of failure
+
     """
     cmd = f"systemctl {task} ceph-{daemon_type}@{daemon_id}"
     role = f"osd.{daemon_id}" if daemon_type == "osd" else daemon_id
